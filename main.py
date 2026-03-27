@@ -187,7 +187,10 @@ class PanelView(discord.ui.View):
 @commands.has_role(OWNER_ROLE_ID)
 async def panel(ctx):
 
-    embed = discord.Embed(
+    color = 0x2b2d31  # SAME color for both embeds
+
+    # -------- FIRST EMBED -------- #
+    embed1 = discord.Embed(
         description=(
             "# Hatake Auto Middleman\n"
             "> - **Paid Service**\n"
@@ -195,16 +198,35 @@ async def panel(ctx):
             "## Fees:\n"
             "> - Deals $250+: $1.50\n"
             "> - Deals under $250: $0.50\n"
-            "> - __Deals under $50 are **FREE**__\n"
-            "━━━━━━━━━━━━━━━━━━━━━━\n"
-            "💰 **Request Litecoin**"
+            "> - __Deals under $50 are **FREE**__"
         ),
-        color=0x2b2d31
+        color=color
     )
 
-    view = PanelView()
+    await ctx.send(embed=embed1)
 
-    await ctx.send(embed=embed, view=view)
+    # -------- SECOND EMBED -------- #
+    embed2 = discord.Embed(
+        description="## <:Ltc:1487040906568663040>・Request Litecoin・<:Ltc:1487040906568663040>",
+        color=color
+    )
+
+    view = discord.ui.View()
+
+    request_btn = discord.ui.Button(
+        label="Request LTC",
+        style=discord.ButtonStyle.primary,
+        emoji="<:Ltc:1468581658084245637>"
+    )
+
+    async def callback(interaction: discord.Interaction):
+        await interaction.response.send_modal(DealModal())
+
+    request_btn.callback = callback
+    view.add_item(request_btn)
+
+    await ctx.send(embed=embed2, view=view)
+
 
 # ---------------- READY ---------------- #
 @bot.event
