@@ -184,46 +184,32 @@ class PanelView(discord.ui.View):
 
 # ---------------- PANEL COMMAND ---------------- #
 @bot.command()
-@is_owner()
+@commands.has_role(OWNER_ROLE_ID)
 async def panel(ctx):
 
+    # MAIN INFO EMBED (top part)
     embed = discord.Embed(
         title="Jace's Auto Middleman",
-        color=0x00ff00  # dark embed like screenshot
-    )
-
-    # Top section
-    embed.description = (
-        "• **Paid Service**\n"
-        "• Read our ToS before using the bot: <#1480212058573246464>"
-    )
-
-    # Fees section
-    embed.add_field(
-        name="Fees:",
-        value=(
+        description=(
+            "• **Paid Service**\n"
+            "• Read our ToS before using the bot: <#1480212058573246464>\n\n"
+            "**Fees:**\n"
             "• Deals $250+: $1.50\n"
             "• Deals under $250: $0.50\n"
             "• __Deals under $50 are FREE__"
         ),
-        inline=False
+        color=0x00ff00  # green
     )
 
-    # Optional divider (fake line)
-    embed.set_footer(text=" ")
+    await ctx.send(embed=embed)
 
-    # Button View
-    view = PanelView()
-
-    # Tutorial button (like screenshot)
-    tutorial_btn = discord.ui.Button(
-        label="Tutorial",
-        style=discord.ButtonStyle.link,
-        url="https://discord.com"  # replace with your link
+    # SECOND BLOCK (LIKE YOUR SCREENSHOT)
+    embed2 = discord.Embed(
+        description="**<:ltc:1449765991461687497> ・ Request Litecoin ・ <:ltc:1449765991461687497>**",
+        color=0x2b2d31  # dark like Discord UI
     )
-    view.add_item(tutorial_btn)
 
-    await ctx.send(embed=embed, view=view)
+    await ctx.send(embed=embed2, view=PanelView())
 
 # ---------------- READY ---------------- #
 @bot.event
