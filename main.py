@@ -33,24 +33,24 @@ async def get_category(guild):
     return cat
 
 
-# ---------------- PANEL ---------------- #
+# ---------------- PANEL VIEW ---------------- #
 class PanelView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Request LTC", style=discord.ButtonStyle.primary, emoji="💰")
+    @discord.ui.button(label="Request Litecoin", style=discord.ButtonStyle.success, emoji="💸")
     async def request(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         category = await get_category(interaction.guild)
 
         channel = await interaction.guild.create_text_channel(
-            name=f"ticket-{interaction.user.name}",
+            name=f"ltc-{interaction.user.name}",
             category=category
         )
 
         await channel.send(
-            f"{interaction.user.mention}\n"
-            "**Send deal like:**\n"
+            f"📩 {interaction.user.mention}\n\n"
+            "**Fill this format:**\n"
             "`Buyer / Seller / Amount USD / Seller LTC Address`"
         )
 
@@ -66,16 +66,22 @@ class PanelView(discord.ui.View):
 async def panel(ctx):
 
     embed = discord.Embed(
-        title="💰 Litecoin Auto Middleman",
-        description="Click below to start a deal",
-        color=0x2b2d31
+        title="Jace's Auto Middleman",
+        description="• Paid Service\n• Read ToS before using: #tos-crypto",
+        color=0x00ff00  # GREEN
     )
 
     embed.add_field(
-        name="Fees",
-        value="Under $50 → Free\nUnder $250 → $0.5\n250+ → $1.5",
+        name="📊 Fees",
+        value=(
+            "• Deals $250+: $1.50\n"
+            "• Deals under $250: $0.50\n"
+            "• Deals under $50 are **FREE**"
+        ),
         inline=False
     )
+
+    embed.set_footer(text="Click below to start a deal")
 
     await ctx.send(embed=embed, view=PanelView())
 
@@ -91,7 +97,7 @@ async def on_message(message):
     if message.channel.id in active_deals:
         return
 
-    if not message.channel.name.startswith("ticket-"):
+    if not message.channel.name.startswith("ltc-"):
         return
 
     try:
@@ -123,7 +129,7 @@ async def on_message(message):
         }
 
         embed = discord.Embed(
-            title="💰 Payment Info",
+            title="💰 Payment Information",
             description=(
                 f"Send **{ltc_amount} LTC** to:\n"
                 f"`{LTC_ADDRESS}`"
@@ -143,7 +149,7 @@ class DealView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Refresh", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="Refresh Payment", style=discord.ButtonStyle.secondary)
     async def refresh(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         data = active_deals.get(interaction.channel.id)
@@ -151,7 +157,7 @@ class DealView(discord.ui.View):
             return await interaction.response.send_message("No active deal.", ephemeral=True)
 
         if data["paid"]:
-            await interaction.response.send_message("✅ Payment already confirmed", ephemeral=True)
+            await interaction.response.send_message("✅ Payment confirmed", ephemeral=True)
         else:
             await interaction.response.send_message("❌ Payment not detected", ephemeral=True)
 
