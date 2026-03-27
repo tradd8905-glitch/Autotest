@@ -8,6 +8,7 @@ TOKEN = os.getenv("TOKEN")
 
 LTC_ADDRESS = "LYQA3NYHDaX5dW81EC5141SqqZKPdZR5dJ"
 STAFF_ROLE_ID = 1486962183878479972
+OWNER_ROLE_ID = 1478027602269700168
 TICKET_CATEGORY_NAME = "📩 Tickets"
 
 intents = discord.Intents.all()
@@ -15,6 +16,12 @@ bot = commands.Bot(command_prefix="$", intents=intents)
 
 active_deals = {}
 role_data = {}
+
+# ---------------- OWNER CHECK ---------------- #
+def is_owner():
+    async def predicate(ctx):
+        return any(role.id == OWNER_ROLE_ID for role in ctx.author.roles)
+    return commands.check(predicate)
 
 # ---------------- PRICE ---------------- #
 def get_ltc_price():
@@ -34,11 +41,39 @@ async def get_category(guild):
 # ---------------- MODAL ---------------- #
 class DealModal(discord.ui.Modal, title="Fill Deal Details"):
 
-    trader = discord.ui.TextInput(label="Trader Username or ID", required=True)
-    giving = discord.ui.TextInput(label="What are you giving?", style=discord.TextStyle.paragraph)
-    receiving = discord.ui.TextInput(label="What is your trader giving?", style=discord.TextStyle.paragraph)
+    trader = discord.ui.TextInput(
+        label="Trader User ID",
+        placeholder="Enter Discord ID only",
+        required=True
+    )
+
+    giving = discord.ui.TextInput(
+        label="What are you giving?",
+        style=discord.TextStyle.paragraph
+    )
+
+    receiving = discord.ui.TextInput(
+        label="What is your trader giving?",
+        style=discord.TextStyle.paragraph
+    )
 
     async def on_submit(self, interaction: discord.Interaction):
+
+        # VALIDATION
+        if not self.trader.value.isdigit():
+            return await interaction.response.send_message(
+                "❌ Enter valid Discord User ID (numbers only)",
+                ephemeral=True
+            )
+
+        # CHECK USER EXISTS
+        try:
+            user = await interaction.client.fetch_user(int(self.trader.value))
+        except:
+            return await interaction.response.send_message(
+                "❌ Invalid user ID",
+                ephemeral=True
+            )
 
         category = await get_category(interaction.guild)
 
@@ -49,18 +84,17 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
 
         role_data[channel.id] = {"sender": None, "receiver": None}
 
-        # FIXED UI PART (INDENTED CORRECTLY)
-        trader = f"<@{self.trader.value}>" if self.trader.value.isdigit() else self.trader.value
-        content = f"{interaction.user.mention} {trader}"
+        trader_mention = f"<@{self.trader.value}>"
+        content = f"{interaction.user.mention} {trader_mention}"
 
         embed = discord.Embed(
             description=(
                 "👋 **Jace's Auto Middleman Service**\n\n"
-                "Make sure to follow the steps and read the instructions carefully.\n"
+                "Make sure to follow the steps and read carefully.\n"
                 "By using this bot, you agree to ToS.\n\n"
                 f"**{interaction.user.mention}'s side:**\n"
                 f"```{self.giving.value}```\n\n"
-                f"**{trader}'s side:**\n"
+                f"**{trader_mention}'s side:**\n"
                 f"```{self.receiving.value}```"
             ),
             color=0x2b2d31
@@ -74,15 +108,16 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
             emoji="❌"
         )
 
-        async def delete_callback(interaction2):
-            await interaction2.channel.delete()
+        async def delete_callback(i):
+            if i.user.id != interaction.user.id:
+                return await i.response.send_message("❌ Not allowed", ephemeral=True)
+            await i.channel.delete()
 
         delete_btn.callback = delete_callback
         view.add_item(delete_btn)
 
         await channel.send(content=content, embed=embed, view=view)
 
-        # ROLE SELECTION (UNCHANGED)
         embed2 = discord.Embed(title="👤 Select your role", color=0x00ff00)
         embed2.add_field(name="Sender", value="Not selected", inline=True)
         embed2.add_field(name="Receiver", value="Not selected", inline=True)
@@ -124,10 +159,6 @@ class RoleView(discord.ui.View):
         role_data[interaction.channel.id] = {"sender": None, "receiver": None}
         await update_roles(interaction)
 
-    @discord.ui.button(label="Delete Ticket", style=discord.ButtonStyle.danger)
-    async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.channel.delete()
-
 # ---------------- CONFIRM VIEW ---------------- #
 class ConfirmView(discord.ui.View):
     def __init__(self):
@@ -135,48 +166,12 @@ class ConfirmView(discord.ui.View):
 
     @discord.ui.button(label="Correct", style=discord.ButtonStyle.success)
     async def correct(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("✅ Roles confirmed. Now send deal:\nBuyer / Seller / Amount / Seller Wallet")
+        await interaction.response.send_message("✅ Roles confirmed. Send: Buyer/Seller/Amount/Wallet")
 
     @discord.ui.button(label="Incorrect", style=discord.ButtonStyle.danger)
     async def incorrect(self, interaction: discord.Interaction, button: discord.ui.Button):
         role_data[interaction.channel.id] = {"sender": None, "receiver": None}
-        await interaction.response.send_message("❌ Reset roles.", ephemeral=True)
-
-# ---------------- DEAL VIEW ---------------- #
-class DealView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="Refresh", style=discord.ButtonStyle.secondary)
-    async def refresh(self, interaction: discord.Interaction, button: discord.ui.Button):
-        data = active_deals.get(interaction.channel.id)
-
-        if not data:
-            return await interaction.response.send_message("No active deal.", ephemeral=True)
-
-        if data["paid"]:
-            await interaction.response.send_message("✅ Payment confirmed", ephemeral=True)
-        else:
-            await interaction.response.send_message("❌ Payment not detected", ephemeral=True)
-
-    @discord.ui.button(label="Release", style=discord.ButtonStyle.success)
-    async def release(self, interaction: discord.Interaction, button: discord.ui.Button):
-        data = active_deals.get(interaction.channel.id)
-
-        if not data or not data["paid"]:
-            return await interaction.response.send_message("❌ Payment not done", ephemeral=True)
-
-        embed = discord.Embed(
-            title="✅ Release Payment",
-            description=f"Send **{data['ltc']} LTC** to:\n`{data['seller_wallet']}`",
-            color=0x00ff00
-        )
-
-        await interaction.response.send_message(embed=embed)
-
-    @discord.ui.button(label="Close", style=discord.ButtonStyle.danger)
-    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.channel.delete()
+        await interaction.response.send_message("❌ Reset roles", ephemeral=True)
 
 # ---------------- PANEL ---------------- #
 class PanelView(discord.ui.View):
@@ -189,19 +184,20 @@ class PanelView(discord.ui.View):
 
 # ---------------- PANEL COMMAND ---------------- #
 @bot.command()
-@commands.has_permissions(administrator=True)
+@is_owner()
 async def panel(ctx):
 
     embed = discord.Embed(
-        title="💰 Litecoin Auto Middleman",
-        description="Click below to start deal",
+        title="Jace's Auto Middleman",
+        description=(
+            "• Paid Service\n"
+            "• Read ToS: #tos-crypto\n\n"
+            "**Fees:**\n"
+            "• Deals $250+: $1.50\n"
+            "• Deals under $250: $0.50\n"
+            "• Deals under $50 are FREE"
+        ),
         color=0x00ff00
-    )
-
-    embed.add_field(
-        name="Fees",
-        value="Under $50 → Free\nUnder $250 → $0.5\n250+ → $1.5",
-        inline=False
     )
 
     await ctx.send(embed=embed, view=PanelView())
@@ -212,7 +208,6 @@ async def on_ready():
     bot.add_view(PanelView())
     bot.add_view(RoleView())
     bot.add_view(ConfirmView())
-    bot.add_view(DealView())
     print(f"✅ Logged in as {bot.user}")
 
 bot.run(TOKEN)
