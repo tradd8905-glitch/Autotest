@@ -192,18 +192,17 @@ async def panel(ctx):
             "# Hatake Auto Middleman\n"
             "> - **Paid Service**\n"
             "> - Read our ToS before using the bot: <#1487042262377693316>\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "## Fees:\n"
             "> - Deals $250+: $1.50\n"
             "> - Deals under $250: $0.50\n"
-            "> - __Deals under $50 are **FREE**__\n\n"
+            "> - __Deals under $50 are **FREE**__\n"
             "━━━━━━━━━━━━━━━━━━━━━━\n"
-            "<:Ltc:1487040906568663040> **Request Litecoin Below**"
+            "💰 **Request Litecoin**"
         ),
         color=0x2b2d31
     )
 
-    view = PanelView()  # use your existing view
+    view = PanelView()
 
     await ctx.send(embed=embed, view=view)
 
