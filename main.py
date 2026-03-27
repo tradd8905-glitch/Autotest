@@ -207,7 +207,7 @@ async def panel(ctx):
 
     # -------- SECOND EMBED -------- #
     embed2 = discord.Embed(
-        description="## <:Ltc:1468581658084245637>・Request Litecoin・<:Ltc:1468581658084245637>",
+        description="## <:Ltc:1487040906568663040>・Request Litecoin・<:Ltc:1487040906568663040>",
         color=color
     )
 
