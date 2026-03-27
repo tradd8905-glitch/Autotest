@@ -192,7 +192,7 @@ async def panel(ctx):
         description=(
             "# Jace's Auto Middleman\n"
             "> - **Paid Service**\n"
-            "> - Read our ToS before using the bot: <#1484280263423819873>\n\n"
+            "> - Read our ToS before using the bot: <#1486733280454770778>\n\n"
             "## Fees:\n"
             "> - Deals $250+: $1.50\n"
             "> - Deals under $250: $0.50\n"
