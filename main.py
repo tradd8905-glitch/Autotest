@@ -189,18 +189,41 @@ async def panel(ctx):
 
     embed = discord.Embed(
         title="Jace's Auto Middleman",
-        description=(
-            "• Paid Service\n"
-            "• Read ToS: #tos-crypto\n\n"
-            "**Fees:**\n"
-            "• Deals $250+: $1.50\n"
-            "• Deals under $250: $0.50\n"
-            "• Deals under $50 are FREE"
-        ),
-        color=0x00ff00
+        color=0x00ff00  # dark embed like screenshot
     )
 
-    await ctx.send(embed=embed, view=PanelView())
+    # Top section
+    embed.description = (
+        "• **Paid Service**\n"
+        "• Read our ToS before using the bot: <#1480212058573246464>"
+    )
+
+    # Fees section
+    embed.add_field(
+        name="Fees:",
+        value=(
+            "• Deals $250+: $1.50\n"
+            "• Deals under $250: $0.50\n"
+            "• __Deals under $50 are FREE__"
+        ),
+        inline=False
+    )
+
+    # Optional divider (fake line)
+    embed.set_footer(text=" ")
+
+    # Button View
+    view = PanelView()
+
+    # Tutorial button (like screenshot)
+    tutorial_btn = discord.ui.Button(
+        label="Tutorial",
+        style=discord.ButtonStyle.link,
+        url="https://discord.com"  # replace with your link
+    )
+    view.add_item(tutorial_btn)
+
+    await ctx.send(embed=embed, view=view)
 
 # ---------------- READY ---------------- #
 @bot.event
