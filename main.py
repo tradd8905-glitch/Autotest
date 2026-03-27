@@ -187,35 +187,36 @@ class PanelView(discord.ui.View):
 @commands.has_role(OWNER_ROLE_ID)
 async def panel(ctx):
 
-    # -------- FIRST EMBED (MAIN TEXT) -------- #
+    color = 0x00ff00  # SAME color for both embeds
+
+    # -------- FIRST EMBED -------- #
     embed1 = discord.Embed(
         description=(
             "# Jace's Auto Middleman\n"
             "> - **Paid Service**\n"
-            "> - Read our ToS before using the bot: <#1486733280454770778>\n\n"
+            "> - Read our ToS before using the bot: <#1484280263423819873>\n\n"
             "## Fees:\n"
             "> - Deals $250+: $1.50\n"
             "> - Deals under $250: $0.50\n"
             "> - __Deals under $50 are **FREE**__"
         ),
-        color=0x00ff00  # green
+        color=color
     )
 
     await ctx.send(embed=embed1)
 
-    # -------- SECOND EMBED (REQUEST BLOCK) -------- #
+    # -------- SECOND EMBED -------- #
     embed2 = discord.Embed(
-        description="## <:ltc:1449765991461687497>・Request Litecoin・<:ltc:1449765991461687497>",
-        color=0x2b2d31  # dark block like screenshot
+        description="## <:Ltc:1468581658084245637>・Request Litecoin・<:Ltc:1468581658084245637>",
+        color=color
     )
 
-    # BUTTON
     view = discord.ui.View()
 
     request_btn = discord.ui.Button(
         label="Request LTC",
-        style=discord.ButtonStyle.primary,  # blue button
-        emoji="<:ltc:1449765991461687497>"
+        style=discord.ButtonStyle.primary,
+        emoji="<:Ltc:1468581658084245637>"
     )
 
     async def callback(interaction: discord.Interaction):
