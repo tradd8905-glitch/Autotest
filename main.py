@@ -192,7 +192,7 @@ async def panel(ctx):
     # -------- FIRST EMBED -------- #
     embed1 = discord.Embed(
         description=(
-            "# Jace's Auto Middleman\n"
+            "# Hatake Auto Middleman\n"
             "> - **Paid Service**\n"
             "> - Read our ToS before using the bot: <#1484280263423819873>\n\n"
             "## Fees:\n"
