@@ -77,25 +77,27 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
 
         category = await get_category(interaction.guild)
 
-overwrites = {
-    interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
+        # ✅ FIXED INDENTATION
+        overwrites = {
+            interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
 
-    # creator
-    interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+            # creator
+            interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
 
-    # trader
-    user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
-}
+            # trader
+            user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+        }
 
-# staff
-staff_role = interaction.guild.get_role(STAFF_ROLE_ID)
-overwrites[staff_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True)
+        # staff
+        staff_role = interaction.guild.get_role(STAFF_ROLE_ID)
+        if staff_role:
+            overwrites[staff_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True)
 
-channel = await interaction.guild.create_text_channel(
-    name=f"ltc-{interaction.user.name}",
-    category=category,
-    overwrites=overwrites
-)
+        channel = await interaction.guild.create_text_channel(
+            name=f"ltc-{interaction.user.name}",
+            category=category,
+            overwrites=overwrites
+        )
 
         role_data[channel.id] = {"sender": None, "receiver": None}
 
