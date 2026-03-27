@@ -31,15 +31,43 @@ async def get_category(guild):
         cat = await guild.create_category(TICKET_CATEGORY_NAME)
     return cat
 
+# ---------------- MODAL ---------------- #
+class DealModal(discord.ui.Modal, title="Fill Deal Details"):
+
+    trader = discord.ui.TextInput(label="Trader Username or ID", required=True)
+    giving = discord.ui.TextInput(label="What are you giving?", style=discord.TextStyle.paragraph)
+    receiving = discord.ui.TextInput(label="What is your trader giving?", style=discord.TextStyle.paragraph)
+
+    async def on_submit(self, interaction: discord.Interaction):
+
+        category = await get_category(interaction.guild)
+
+        channel = await interaction.guild.create_text_channel(
+            name=f"ltc-{interaction.user.name}",
+            category=category
+        )
+
+        role_data[channel.id] = {"sender": None, "receiver": None}
+
+        embed = discord.Embed(title="📄 Deal Information", color=0x00ff00)
+        embed.add_field(name="Trader", value=self.trader.value, inline=False)
+        embed.add_field(name="You Give", value=self.giving.value, inline=False)
+        embed.add_field(name="You Receive", value=self.receiving.value, inline=False)
+
+        embed2 = discord.Embed(title="👤 Select Roles", color=0x00ff00)
+        embed2.add_field(name="Sender", value="Not selected", inline=True)
+        embed2.add_field(name="Receiver", value="Not selected", inline=True)
+
+        await channel.send(embed=embed)
+        await channel.send(embed=embed2, view=RoleView())
+
+        await interaction.response.send_message(f"✅ Ticket created: {channel.mention}", ephemeral=True)
+
 # ---------------- ROLE UPDATE ---------------- #
 async def update_roles(interaction):
     data = role_data.get(interaction.channel.id)
 
-    embed = discord.Embed(
-        title="👤 Select your role",
-        color=0x00ff00
-    )
-
+    embed = discord.Embed(title="👤 Select your role", color=0x00ff00)
     embed.add_field(name="Sender", value=data["sender"] or "Not selected", inline=True)
     embed.add_field(name="Receiver", value=data["receiver"] or "Not selected", inline=True)
 
@@ -81,7 +109,7 @@ class ConfirmView(discord.ui.View):
     @discord.ui.button(label="Incorrect", style=discord.ButtonStyle.danger)
     async def incorrect(self, interaction: discord.Interaction, button: discord.ui.Button):
         role_data[interaction.channel.id] = {"sender": None, "receiver": None}
-        await interaction.response.send_message("❌ Reset roles. Select again.", ephemeral=True)
+        await interaction.response.send_message("❌ Reset roles.", ephemeral=True)
 
 # ---------------- DEAL VIEW ---------------- #
 class DealView(discord.ui.View):
@@ -104,10 +132,7 @@ class DealView(discord.ui.View):
     async def release(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = active_deals.get(interaction.channel.id)
 
-        if not data:
-            return await interaction.response.send_message("No deal.", ephemeral=True)
-
-        if not data["paid"]:
+        if not data or not data["paid"]:
             return await interaction.response.send_message("❌ Payment not done", ephemeral=True)
 
         embed = discord.Embed(
@@ -129,31 +154,7 @@ class PanelView(discord.ui.View):
 
     @discord.ui.button(label="Request LTC", style=discord.ButtonStyle.success, emoji="💰")
     async def request(self, interaction: discord.Interaction, button: discord.ui.Button):
-
-        category = await get_category(interaction.guild)
-
-        channel = await interaction.guild.create_text_channel(
-            name=f"ltc-{interaction.user.name}",
-            category=category
-        )
-
-        role_data[channel.id] = {"sender": None, "receiver": None}
-
-        embed = discord.Embed(
-            title="👋 Auto Middleman Service",
-            description="Select roles below",
-            color=0x00ff00
-        )
-
-        embed.add_field(name="Sender", value="Not selected", inline=True)
-        embed.add_field(name="Receiver", value="Not selected", inline=True)
-
-        await channel.send(embed=embed, view=RoleView())
-
-        await interaction.response.send_message(
-            f"✅ Ticket created: {channel.mention}",
-            ephemeral=True
-        )
+        await interaction.response.send_modal(DealModal())
 
 # ---------------- PANEL COMMAND ---------------- #
 @bot.command()
@@ -174,7 +175,7 @@ async def panel(ctx):
 
     await ctx.send(embed=embed, view=PanelView())
 
-# ---------------- MESSAGE HANDLER ---------------- #
+# ---------------- DEAL HANDLER ---------------- #
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -191,7 +192,7 @@ async def on_message(message):
     try:
         parts = message.content.split("/")
         if len(parts) < 4:
-            return
+            return await message.channel.send("❌ Use: Buyer/Seller/Amount/Wallet")
 
         buyer = parts[0].strip()
         seller = parts[1].strip()
