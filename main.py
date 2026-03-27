@@ -187,7 +187,7 @@ class PanelView(discord.ui.View):
 @commands.has_role(OWNER_ROLE_ID)
 async def panel(ctx):
 
-    color = 0x2b2d31  # SAME color for both embeds
+    color = 0xc0c0c0  # SAME color for both embeds
 
     # -------- FIRST EMBED -------- #
     embed1 = discord.Embed(
