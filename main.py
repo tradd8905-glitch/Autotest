@@ -99,6 +99,7 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
             ),
             color=0x2b2d31
         )
+        embed.set_thumbnail(url=user.display_avatar.url)
 
         view = discord.ui.View()
 
