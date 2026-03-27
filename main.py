@@ -187,29 +187,44 @@ class PanelView(discord.ui.View):
 @commands.has_role(OWNER_ROLE_ID)
 async def panel(ctx):
 
-    # MAIN INFO EMBED (top part)
-    embed = discord.Embed(
-        title="Jace's Auto Middleman",
+    # -------- FIRST EMBED (MAIN TEXT) -------- #
+    embed1 = discord.Embed(
         description=(
-            "• **Paid Service**\n"
-            "• Read our ToS before using the bot: <#1480212058573246464>\n\n"
-            "**Fees:**\n"
-            "• Deals $250+: $1.50\n"
-            "• Deals under $250: $0.50\n"
-            "• __Deals under $50 are FREE__"
+            "# Jace's Auto Middleman\n"
+            "> - **Paid Service**\n"
+            "> - Read our ToS before using the bot: <#1484280263423819873>\n\n"
+            "## Fees:\n"
+            "> - Deals $250+: $1.50\n"
+            "> - Deals under $250: $0.50\n"
+            "> - __Deals under $50 are **FREE**__"
         ),
         color=0x00ff00  # green
     )
 
-    await ctx.send(embed=embed)
+    await ctx.send(embed=embed1)
 
-    # SECOND BLOCK (LIKE YOUR SCREENSHOT)
+    # -------- SECOND EMBED (REQUEST BLOCK) -------- #
     embed2 = discord.Embed(
-        description="**<:ltc:1449765991461687497> ・ Request Litecoin ・ <:ltc:1449765991461687497>**",
-        color=0x2b2d31  # dark like Discord UI
+        description="## <:ltc:1449765991461687497>・Request Litecoin・<:ltc:1449765991461687497>",
+        color=0x2b2d31  # dark block like screenshot
     )
 
-    await ctx.send(embed=embed2, view=PanelView())
+    # BUTTON
+    view = discord.ui.View()
+
+    request_btn = discord.ui.Button(
+        label="Request LTC",
+        style=discord.ButtonStyle.primary,  # blue button
+        emoji="<:ltc:1449765991461687497>"
+    )
+
+    async def callback(interaction: discord.Interaction):
+        await interaction.response.send_modal(DealModal())
+
+    request_btn.callback = callback
+    view.add_item(request_btn)
+
+    await ctx.send(embed=embed2, view=view)
 
 # ---------------- READY ---------------- #
 @bot.event
