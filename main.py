@@ -117,7 +117,7 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
             overwrites[staff_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True)
 
         channel = await interaction.guild.create_text_channel(
-            name=f"ltc-{interaction.user.id}",
+           name=f"ltc-{interaction.user.name}",
             category=category,
             overwrites=overwrites
         )
