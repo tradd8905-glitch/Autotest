@@ -90,127 +90,106 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
 
     async def on_submit(self, interaction: discord.Interaction):
 
-        # VALIDATION
-        if not self.trader.value.isdigit():
-            return await interaction.response.send_message(
-                "❌ Enter valid Discord User ID (numbers only)",
-                ephemeral=True
-            )
-
-        # CHECK USER EXISTS
-        try:
-            user = await interaction.client.fetch_user(int(self.trader.value))
-        except:
-            return await interaction.response.send_message(
-                "❌ Invalid user ID",
-                ephemeral=True
-            )
-
-        category = await get_category(interaction.guild)
-
-        # ✅ FIXED INDENTATION
-        overwrites = {
-            interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
-
-            # creator
-            interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
-
-            # trader
-            user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
-        }
-
-        # staff
-        staff_role = interaction.guild.get_role(STAFF_ROLE_ID)
-        if staff_role:
-            overwrites[staff_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True)
-
-        channel = await interaction.guild.create_text_channel(
-            name=f"ltc-{interaction.user.name}",
-            category=category,
-            overwrites=overwrites
-        )
-
-        role_data[channel.id] = {"sender": None, "receiver": None}
-
-        trader_mention = f"<@{self.trader.value}>"
-        content = f"{interaction.user.mention} {trader_mention}"
-
-        embed = discord.Embed(
-            description=(
-                "👋 **Jace's Auto Middleman Service**\n\n"
-                "Make sure to follow the steps and read carefully.\n"
-                "By using this bot, you agree to ToS.\n\n"
-                f"**{interaction.user.mention}'s side:**\n"
-                f"```{self.giving.value}```\n\n"
-                f"**{trader_mention}'s side:**\n"
-                f"```{self.receiving.value}```"
-            ),
-            color=0x2b2d31
-        )
-        
-
-        view = discord.ui.View()
-
-delete_btn = discord.ui.Button(
-    label="Delete Ticket",
-    style=discord.ButtonStyle.danger,
-    emoji="❌"
-)
-
-async def delete_callback(i):
-    if i.user.id != interaction.user.id:
-        return await i.response.send_message("❌ Not allowed", ephemeral=True)
-    await i.channel.delete()
-
-delete_btn.callback = delete_callback
-view.add_item(delete_btn)
-
-# 🔥 AVATAR PART (CORRECT PLACE)
-creator = interaction.user
-trader_user = user
-
-avatar_buffer = merge_avatars(
-    creator.display_avatar.url,
-    trader_user.display_avatar.url
-)
-
-file = discord.File(avatar_buffer, filename="avatars.png")
-
-embed.set_thumbnail(url="attachment://avatars.png")
-
-await channel.send(
-    content=f"{creator.mention} {trader_user.mention}",
-    embed=embed,
-    file=file,
-    view=view
-)
-
-        delete_btn = discord.ui.Button(
-            label="Delete Ticket",
-            style=discord.ButtonStyle.danger,
-            emoji="❌"
-        )
-
-        async def delete_callback(i):
-            if i.user.id != interaction.user.id:
-                return await i.response.send_message("❌ Not allowed", ephemeral=True)
-            await i.channel.delete()
-
-        delete_btn.callback = delete_callback
-        view.add_item(delete_btn)
-
-        await channel.send(content=content, embed=embed, view=view)
-
-        embed2 = discord.Embed(title="👤 Select your role", color=0x00ff00)
-        embed2.add_field(name="Sender", value="Not selected", inline=True)
-        embed2.add_field(name="Receiver", value="Not selected", inline=True)
-
-        await channel.send(embed=embed2, view=RoleView())
-
-        await interaction.response.send_message(
-            f"✅ Ticket created: {channel.mention}",
+    # VALIDATION
+    if not self.trader.value.isdigit():
+        return await interaction.response.send_message(
+            "❌ Enter valid Discord User ID (numbers only)",
             ephemeral=True
         )
+
+    # CHECK USER EXISTS
+    try:
+        user = await interaction.client.fetch_user(int(self.trader.value))
+    except:
+        return await interaction.response.send_message(
+            "❌ Invalid user ID",
+            ephemeral=True
+        )
+
+    category = await get_category(interaction.guild)
+
+    overwrites = {
+        interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
+        interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+        user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+    }
+
+    staff_role = interaction.guild.get_role(STAFF_ROLE_ID)
+    if staff_role:
+        overwrites[staff_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True)
+
+    channel = await interaction.guild.create_text_channel(
+        name=f"ltc-{interaction.user.id}",  # FIXED
+        category=category,
+        overwrites=overwrites
+    )
+
+    role_data[channel.id] = {"sender": None, "receiver": None}
+
+    trader_mention = f"<@{self.trader.value}>"
+    creator = interaction.user
+    trader_user = user
+
+    # 🔥 EMBED
+    embed = discord.Embed(
+        description=(
+            "### 👋﹒Jace's Auto Middleman Service\n"
+            "> Make sure to follow the steps and read carefully.\n"
+            "> Please explicitly state the trade details if incorrect.\n"
+            f"> By using this bot, you agree to our ToS <#{1487042262377693316}>\n\n"
+            f"**{creator.mention}'s side:**\n"
+            f"```{self.giving.value}```\n\n"
+            f"**{trader_user.mention}'s side:**\n"
+            f"```{self.receiving.value}```"
+        ),
+        color=0x2b2d31
+    )
+
+    # 🔥 MERGE AVATARS
+    avatar_buffer = merge_avatars(
+        creator.display_avatar.url,
+        trader_user.display_avatar.url
+    )
+
+    file = discord.File(avatar_buffer, filename="avatars.png")
+    embed.set_thumbnail(url="attachment://avatars.png")
+
+    # 🔥 BUTTON
+    view = discord.ui.View()
+
+    delete_btn = discord.ui.Button(
+        label="Delete Ticket",
+        style=discord.ButtonStyle.danger,
+        emoji="❌"
+    )
+
+    async def delete_callback(i):
+        if i.user.id != interaction.user.id:
+            return await i.response.send_message("❌ Not allowed", ephemeral=True)
+        await i.channel.delete()
+
+    delete_btn.callback = delete_callback
+    view.add_item(delete_btn)
+
+    # 🔥 SEND MAIN MESSAGE
+    await channel.send(
+        content=f"{creator.mention} {trader_user.mention}",
+        embed=embed,
+        file=file,
+        view=view
+    )
+
+    # ROLE EMBED
+    embed2 = discord.Embed(title="👤 Select your role", color=0x00ff00)
+    embed2.add_field(name="Sender", value="Not selected", inline=True)
+    embed2.add_field(name="Receiver", value="Not selected", inline=True)
+
+    await channel.send(embed=embed2, view=RoleView())
+
+    await interaction.response.send_message(
+        f"✅ Ticket created: {channel.mention}",
+        ephemeral=True
+    )
 
 # ---------------- ROLE UPDATE ---------------- #
 async def update_roles(interaction):
