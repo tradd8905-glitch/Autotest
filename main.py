@@ -148,7 +148,7 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
         )
 
         file = discord.File(avatar_buffer, filename="avatars.png")
-        embed.set_image(url="attachment://avatars.png")
+        embed.set_thumbnail(url="attachment://avatars.png")
 
         view = discord.ui.View()
 
