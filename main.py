@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 from io import BytesIO
 
 def merge_avatars(url1, url2):
-    size = 128
+    size = 256
 
     r1 = requests.get(url1)
     r2 = requests.get(url2)
