@@ -90,14 +90,12 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
 
     async def on_submit(self, interaction: discord.Interaction):
 
-    # VALIDATION
     if not self.trader.value.isdigit():
         return await interaction.response.send_message(
-            "❌ Enter valid Discord User ID (numbers only)",
+            "❌ Enter valid Discord User ID",
             ephemeral=True
         )
 
-    # CHECK USER EXISTS
     try:
         user = await interaction.client.fetch_user(int(self.trader.value))
     except:
@@ -119,33 +117,29 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
         overwrites[staff_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True)
 
     channel = await interaction.guild.create_text_channel(
-        name=f"ltc-{interaction.user.id}",  # FIXED
+        name=f"ltc-{interaction.user.id}",
         category=category,
         overwrites=overwrites
     )
 
     role_data[channel.id] = {"sender": None, "receiver": None}
 
-    trader_mention = f"<@{self.trader.value}>"
     creator = interaction.user
     trader_user = user
 
-    # 🔥 EMBED
+    # EMBED
     embed = discord.Embed(
         description=(
             "### 👋﹒Jace's Auto Middleman Service\n"
-            "> Make sure to follow the steps and read carefully.\n"
-            "> Please explicitly state the trade details if incorrect.\n"
-            f"> By using this bot, you agree to our ToS <#{1487042262377693316}>\n\n"
-            f"**{creator.mention}'s side:**\n"
-            f"```{self.giving.value}```\n\n"
-            f"**{trader_user.mention}'s side:**\n"
-            f"```{self.receiving.value}```"
+            "> Make sure to follow steps carefully\n"
+            f"> ToS: <#{1487042262377693316}>\n\n"
+            f"**{creator.mention}'s side:**\n```{self.giving.value}```\n\n"
+            f"**{trader_user.mention}'s side:**\n```{self.receiving.value}```"
         ),
         color=0x2b2d31
     )
 
-    # 🔥 MERGE AVATARS
+    # 🔥 MERGE AVATARS (THIS IS THE IMPORTANT PART)
     avatar_buffer = merge_avatars(
         creator.display_avatar.url,
         trader_user.display_avatar.url
@@ -154,7 +148,7 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
     file = discord.File(avatar_buffer, filename="avatars.png")
     embed.set_thumbnail(url="attachment://avatars.png")
 
-    # 🔥 BUTTON
+    # BUTTON
     view = discord.ui.View()
 
     delete_btn = discord.ui.Button(
@@ -164,14 +158,14 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
     )
 
     async def delete_callback(i):
-        if i.user.id != interaction.user.id:
+        if i.user.id != creator.id:
             return await i.response.send_message("❌ Not allowed", ephemeral=True)
         await i.channel.delete()
 
     delete_btn.callback = delete_callback
     view.add_item(delete_btn)
 
-    # 🔥 SEND MAIN MESSAGE
+    # SEND (ONLY ONCE)
     await channel.send(
         content=f"{creator.mention} {trader_user.mention}",
         embed=embed,
@@ -179,7 +173,7 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
         view=view
     )
 
-    # ROLE EMBED
+    # ROLE SELECT
     embed2 = discord.Embed(title="👤 Select your role", color=0x00ff00)
     embed2.add_field(name="Sender", value="Not selected", inline=True)
     embed2.add_field(name="Receiver", value="Not selected", inline=True)
