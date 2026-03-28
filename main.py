@@ -90,11 +90,13 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
 
     async def on_submit(self, interaction: discord.Interaction):
 
-    if not self.trader.value.isdigit():
-        return await interaction.response.send_message(
-            "❌ Enter valid Discord User ID",
-            ephemeral=True
-        )
+    async def on_submit(self, interaction: discord.Interaction):
+
+        if not self.trader.value.isdigit():
+            return await interaction.response.send_message(
+                "❌ Enter valid Discord User ID",
+                ephemeral=True
+            )
 
     try:
         user = await interaction.client.fetch_user(int(self.trader.value))
