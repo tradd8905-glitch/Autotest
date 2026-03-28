@@ -133,6 +133,7 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
                 "> Make sure to follow the steps and read the instructions thoroughly\n"
                 "> Please explicitly state the trade details if the information below is ininaccure\n"
                f"> By using this bot,you agree our ToS: <#{1487042262377693316}>\n\n"
+                     "━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"**{creator.mention}'s side:**\n```{self.giving.value}```\n\n"
                 f"**{trader_user.mention}'s side:**\n```{self.receiving.value}```"
             ),
