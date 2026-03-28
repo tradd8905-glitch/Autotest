@@ -2,6 +2,37 @@ import discord
 from discord.ext import commands
 import requests
 import os
+from PIL import Image, ImageDraw
+from io import BytesIO
+
+def merge_avatars(url1, url2):
+    size = 128
+
+    r1 = requests.get(url1)
+    r2 = requests.get(url2)
+
+    img1 = Image.open(BytesIO(r1.content)).convert("RGBA").resize((size, size))
+    img2 = Image.open(BytesIO(r2.content)).convert("RGBA").resize((size, size))
+
+    def circle(img):
+        mask = Image.new("L", (size, size), 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, size, size), fill=255)
+        img.putalpha(mask)
+        return img
+
+    img1 = circle(img1)
+    img2 = circle(img2)
+
+    final = Image.new("RGBA", (size, size * 2), (0, 0, 0, 0))
+    final.paste(img1, (0, 0), img1)
+    final.paste(img2, (0, size), img2)
+
+    buffer = BytesIO()
+    final.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    return buffer
 
 # ---------------- CONFIG ---------------- #
 TOKEN = os.getenv("TOKEN")
@@ -116,9 +147,43 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
             ),
             color=0x2b2d31
         )
-        embed.set_thumbnail(url=user.display_avatar.url)
+        
 
         view = discord.ui.View()
+
+delete_btn = discord.ui.Button(
+    label="Delete Ticket",
+    style=discord.ButtonStyle.danger,
+    emoji="❌"
+)
+
+async def delete_callback(i):
+    if i.user.id != interaction.user.id:
+        return await i.response.send_message("❌ Not allowed", ephemeral=True)
+    await i.channel.delete()
+
+delete_btn.callback = delete_callback
+view.add_item(delete_btn)
+
+# 🔥 AVATAR PART (CORRECT PLACE)
+creator = interaction.user
+trader_user = user
+
+avatar_buffer = merge_avatars(
+    creator.display_avatar.url,
+    trader_user.display_avatar.url
+)
+
+file = discord.File(avatar_buffer, filename="avatars.png")
+
+embed.set_thumbnail(url="attachment://avatars.png")
+
+await channel.send(
+    content=f"{creator.mention} {trader_user.mention}",
+    embed=embed,
+    file=file,
+    view=view
+)
 
         delete_btn = discord.ui.Button(
             label="Delete Ticket",
