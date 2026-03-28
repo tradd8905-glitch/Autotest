@@ -25,7 +25,11 @@ def merge_avatars(url1, url2):
     img2 = circle(img2)
 
     # SIDE-BY-SIDE layout (not vertical anymore)
-    final = Image.new("RGBA", (size * 2, size), (0, 0, 0, 0))
+    gap = 20
+    final = Image.new("RGBA", (size * 2 + gap, size), (0, 0, 0, 0))
+
+    final.paste(img1, (0, 0), img1)
+    final.paste(img2, (size + gap, 0), img2)
 
     final.paste(img1, (0, 0), img1)
     final.paste(img2, (size, 0), img2)
