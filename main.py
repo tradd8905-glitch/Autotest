@@ -53,6 +53,7 @@ bot = commands.Bot(command_prefix="$", intents=intents)
 
 active_deals = {}
 role_data = {}
+confirm_data = {}
 
 # ---------------- OWNER CHECK ---------------- #
 def is_owner():
@@ -220,17 +221,153 @@ class RoleView(discord.ui.View):
 
 # ---------------- CONFIRM VIEW ---------------- #
 class ConfirmView(discord.ui.View):
+
     def __init__(self):
         super().__init__(timeout=None)
 
     @discord.ui.button(label="Correct", style=discord.ButtonStyle.success)
-    async def correct(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("✅ Roles confirmed. Send: Buyer/Seller/Amount/Wallet")
+    async def correct(self, interaction: discord.Interaction, button):
+
+        channel_id = interaction.channel.id
+        roles = role_data.get(channel_id)
+
+        if not roles:
+            return await interaction.response.send_message(
+                "❌ Role data missing",
+                ephemeral=True
+            )
+
+        sender = roles["sender"]
+        receiver = roles["receiver"]
+
+        if channel_id not in confirm_data:
+            confirm_data[channel_id] = {
+                "sender": False,
+                "receiver": False
+            }
+
+        if interaction.user.mention == sender:
+
+            confirm_data[channel_id]["sender"] = True
+
+            await interaction.response.send_message(
+                f"✅ {interaction.user.mention} confirmed Sender role"
+            )
+
+        elif interaction.user.mention == receiver:
+
+            confirm_data[channel_id]["receiver"] = True
+
+            await interaction.response.send_message(
+                f"✅ {interaction.user.mention} confirmed Receiver role"
+            )
+
+        else:
+
+            return await interaction.response.send_message(
+                "❌ Only deal members can confirm",
+                ephemeral=True
+            )
+
+        # BOTH confirmed check
+        if (
+            confirm_data[channel_id]["sender"]
+            and confirm_data[channel_id]["receiver"]
+        ):
+
+            embed = discord.Embed(
+                description="💵 **Set the amount in USD value**",
+                color=0x2b2d31
+            )
+
+            await interaction.channel.send(
+                embed=embed,
+                view=USDButtonView()
+            )
+
 
     @discord.ui.button(label="Incorrect", style=discord.ButtonStyle.danger)
-    async def incorrect(self, interaction: discord.Interaction, button: discord.ui.Button):
-        role_data[interaction.channel.id] = {"sender": None, "receiver": None}
-        await interaction.response.send_message("❌ Reset roles", ephemeral=True)
+    async def incorrect(self, interaction: discord.Interaction, button):
+
+        role_data[interaction.channel.id] = {
+            "sender": None,
+            "receiver": None
+        }
+
+        confirm_data[interaction.channel.id] = {
+            "sender": False,
+            "receiver": False
+        }
+
+        await interaction.response.send_message(
+            "❌ Roles reset",
+            ephemeral=True
+        )
+
+class USDButtonView(discord.ui.View):
+
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(
+        label="Set USD Amount",
+        style=discord.ButtonStyle.primary,
+        emoji="💵"
+    )
+    async def set_amount(self, interaction: discord.Interaction, button):
+
+        roles = role_data.get(interaction.channel.id)
+
+        if interaction.user.mention not in (
+            roles["sender"],
+            roles["receiver"]
+        ):
+            return await interaction.response.send_message(
+                "❌ Only deal members can set amount",
+                ephemeral=True
+            )
+
+        await interaction.response.send_modal(USDModal())
+class USDModal(discord.ui.Modal, title="Enter USD Amount"):
+
+    amount = discord.ui.TextInput(
+        label="Enter USD Value",
+        placeholder="Example: 150",
+        required=True
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+
+        if not self.amount.value.replace(".", "", 1).isdigit():
+            return await interaction.response.send_message(
+                "❌ Enter a valid number",
+                ephemeral=True
+            )
+
+        usd_value = float(self.amount.value)
+
+        ltc_price = get_ltc_price()
+
+        if not ltc_price:
+            return await interaction.response.send_message(
+                "❌ Failed to fetch LTC price",
+                ephemeral=True
+            )
+
+        ltc_amount = usd_value / ltc_price
+
+        embed = discord.Embed(
+            title="💰 LTC Payment Details",
+            description=(
+                f"USD Amount: **${usd_value}**\n"
+                f"LTC Price: **${ltc_price}**\n"
+                f"LTC Required: **{ltc_amount:.6f} LTC**\n\n"
+                f"Send LTC to:\n```{LTC_ADDRESS}```"
+            ),
+            color=0x2b2d31
+        )
+
+        await interaction.response.send_message(embed=embed)
 
 # ---------------- PANEL ---------------- #
 class PanelView(discord.ui.View):
@@ -293,6 +430,7 @@ async def on_ready():
     bot.add_view(PanelView())
     bot.add_view(RoleView())
     bot.add_view(ConfirmView())
+    bot.add_view(USDButtonView())
     print(f"✅ Logged in as {bot.user}")
 
 bot.run(TOKEN)
