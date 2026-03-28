@@ -117,7 +117,7 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
             overwrites[staff_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True)
 
         channel = await interaction.guild.create_text_channel(
-           name=f"ltc-{interaction.user.name}",
+               name=f"ticket-{interaction.user.name}".lower().replace(" ", "-"),
             category=category,
             overwrites=overwrites
         )
@@ -130,8 +130,9 @@ class DealModal(discord.ui.Modal, title="Fill Deal Details"):
         embed = discord.Embed(
             description=(
                 "### 👋﹒Jace's Auto Middleman Service\n"
-                "> Make sure to follow steps carefully\n"
-                f"> ToS: <#{1487042262377693316}>\n\n"
+                "> Make sure to follow the steps and read the instructions thoroughly\n"
+                "> Please explicitly state the trade details if the information below is inaccurate.
+                f"> By using this bot,you agree our ToS: <#{1487042262377693316}>\n\n"
                 f"**{creator.mention}'s side:**\n```{self.giving.value}```\n\n"
                 f"**{trader_user.mention}'s side:**\n```{self.receiving.value}```"
             ),
